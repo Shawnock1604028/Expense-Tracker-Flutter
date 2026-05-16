@@ -1,30 +1,30 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:expense_tracker_flutter/data/app_database.dart';
+import 'package:expense_tracker_flutter/data/database_bootstrap.dart';
 import 'package:expense_tracker_flutter/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
+  setUpAll(configureDatabaseFactory);
+
+  setUp(() async {
+    await AppDatabase.instance.close();
+    await AppDatabase.instance.openForTesting();
+  });
+
+  tearDown(() async {
+    await AppDatabase.instance.close();
+  });
+
+  testWidgets('Expense list shows seeded data from local database',
+      (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(find.text('Expenses'), findsOneWidget);
+    expect(find.text('Groceries'), findsOneWidget);
+    expect(find.text('Netflix'), findsOneWidget);
+    expect(find.text('\$272.24'), findsOneWidget);
+    expect(find.text('Food'), findsWidgets);
   });
 }
