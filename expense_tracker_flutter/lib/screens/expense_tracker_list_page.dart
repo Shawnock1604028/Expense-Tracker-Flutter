@@ -51,37 +51,52 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(0),
                 child: Card(
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(10),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          'Total spent',
-                          style: theme.textTheme.titleSmall,
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              'Total spent',
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                height: 1.0,
+                              ),
+                              textHeightBehavior: const TextHeightBehavior(
+                                applyHeightToFirstAscent: false, // Forces flush left/top alignment
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              '\$${total.toStringAsFixed(2)}',
+                              style: theme.textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ]
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 2),
                         Text(
-                          '\$${total.toStringAsFixed(2)}',
-                          style: theme.textTheme.headlineMedium?.copyWith(
+                          ' Total ${expenses.length} transactions',
+                          style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Text(
-                          '${expenses.length} expenses',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        if (pendingSyncCount > 0) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            '$pendingSyncCount pending sync',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.tertiary,
-                            ),
-                          ),
-                        ],
+                        // if (pendingSyncCount > 0) ...[
+                        //   const SizedBox(height: 8),
+                        //   Text(
+                        //     '$pendingSyncCount pending sync',
+                        //     style: theme.textTheme.bodySmall?.copyWith(
+                        //       color: theme.colorScheme.tertiary,
+                        //     ),
+                        //   ),
+                        // ],
                       ],
                     ),
                   ),
@@ -91,9 +106,9 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
                 child: expenses.isEmpty
                     ? const Center(child: Text('No expenses yet'))
                     : ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
                         itemCount: expenses.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        separatorBuilder: (_, _) => const SizedBox(height: 0),
                         itemBuilder: (context, index) {
                           return _ExpenseListTile(expense: expenses[index]);
                         },
@@ -114,7 +129,6 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
 
 class _ExpenseListTile extends StatelessWidget {
   const _ExpenseListTile({required this.expense});
-
   final Expense expense;
 
   @override
@@ -123,37 +137,27 @@ class _ExpenseListTile extends StatelessWidget {
     final dateLabel =
         '${expense.date.month}/${expense.date.day}/${expense.date.year}';
     final categoryLabel = expense.categoryName ?? 'Unknown';
+    final title = '${expense.title}';
 
     return Card(
+      // Removes extra default margin around the card to keep it compact
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: theme.colorScheme.primaryContainer,
-          child: Icon(
-            Icons.receipt_long,
-            color: theme.colorScheme.onPrimaryContainer,
+        dense: true, // 1. Shrinks font metrics and default tile height
+        visualDensity: const VisualDensity(vertical: -2), // 2. Compresses vertical padding further (-4 is max)
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0), // 3. Zeroes out extra vertical space
+        
+        title: Text(
+          '$dateLabel · $categoryLabel · $title', // Cleaned up the dot spacing
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        title: Text(expense.title),
-        subtitle: Text('$categoryLabel · $dateLabel'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (expense.needsSync)
-              Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Icon(
-                  Icons.cloud_upload_outlined,
-                  size: 18,
-                  color: theme.colorScheme.tertiary,
-                ),
-              ),
-            Text(
-              '\$${expense.amount.toStringAsFixed(2)}',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        trailing: Text(
+          '\$${expense.amount.toStringAsFixed(2)}',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

@@ -1,7 +1,7 @@
 import 'syncable_entity.dart';
 
 class Category extends SyncableEntity {
-  const Category({
+  Category({
     required this.id,
     required this.name,
     required this.createdAt,

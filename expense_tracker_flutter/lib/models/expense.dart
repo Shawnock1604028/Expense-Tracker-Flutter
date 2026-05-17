@@ -1,7 +1,7 @@
 import 'syncable_entity.dart';
 
 class Expense extends SyncableEntity {
-  const Expense({
+  Expense({
     required this.id,
     required this.title,
     required this.amount,
