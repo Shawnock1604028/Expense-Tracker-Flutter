@@ -83,9 +83,66 @@ class AppDatabase {
     return rows.map(Category.fromMap).toList();
   }
 
+  Future<void> insertCategory(Category category) async {
+    final db = await database;
+    await db.insert(TableNames.categories, category.toMap());
+  }
+
+  Future<void> updateCategory(Category category) async {
+    final db = await database;
+    await db.update(
+      TableNames.categories,
+      category.toMap(),
+      where: '${SyncColumns.id} = ?',
+      whereArgs: [category.id],
+    );
+  }
+
+  Future<int> countExpensesForCategory(String categoryId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) FROM ${TableNames.expenses} '
+      'WHERE ${ExpenseColumns.categoryId} = ?',
+      [categoryId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<bool> deleteCategory(String id) async {
+    final inUse = await countExpensesForCategory(id);
+    if (inUse > 0) return false;
+
+    final db = await database;
+    await db.delete(
+      TableNames.categories,
+      where: '${SyncColumns.id} = ?',
+      whereArgs: [id],
+    );
+    return true;
+  }
+
   Future<void> insertExpense(Expense expense) async {
     final db = await database;
     await db.insert(TableNames.expenses, expense.toMap());
+  }
+
+  Future<void> updateExpense(Expense expense) async {
+    final db = await database;
+    await db.update(
+      TableNames.expenses,
+      expense.toMap(),
+      where: '${SyncColumns.id} = ?',
+      whereArgs: [expense.id],
+    );
+  }
+
+  Future<void> deleteExpense(String id) async {
+    final db = await database;
+    await db.delete(
+      TableNames.expenses,
+      where: '${SyncColumns.id} = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<List<Expense>> getExpensesWithCategories() async {

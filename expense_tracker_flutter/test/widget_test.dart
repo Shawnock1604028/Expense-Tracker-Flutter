@@ -16,15 +16,20 @@ void main() {
     await AppDatabase.instance.close();
   });
 
-  testWidgets('Expense list shows seeded data from local database',
+  testWidgets('Home shows summary and navigates to expenses',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
+    expect(find.text('Shawn'), findsOneWidget);
+    expect(find.text('Total expense'), findsOneWidget);
+    expect(find.text('\$272.24'), findsOneWidget);
     expect(find.text('Expenses'), findsOneWidget);
+
+    await tester.tap(find.text('Expenses'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Groceries'), findsOneWidget);
     expect(find.text('Netflix'), findsOneWidget);
-    expect(find.text('\$272.24'), findsOneWidget);
-    expect(find.text('Food'), findsWidgets);
   });
 }

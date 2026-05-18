@@ -5,35 +5,51 @@ import '../data/app_database.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 
-Future<bool> showAddExpenseDialog(BuildContext context) async {
+Future<bool> showAddExpenseDialog(BuildContext context) =>
+    showExpenseFormDialog(context);
+
+Future<bool> showExpenseFormDialog(
+  BuildContext context, {
+  Expense? expense,
+}) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (context) => const _AddExpenseDialog(),
+    builder: (context) => _ExpenseFormDialog(expense: expense),
   );
   return result ?? false;
 }
 
-class _AddExpenseDialog extends StatefulWidget {
-  const _AddExpenseDialog();
+class _ExpenseFormDialog extends StatefulWidget {
+  const _ExpenseFormDialog({this.expense});
+
+  final Expense? expense;
+
+  bool get isEditing => expense != null;
 
   @override
-  State<_AddExpenseDialog> createState() => _AddExpenseDialogState();
+  State<_ExpenseFormDialog> createState() => _ExpenseFormDialogState();
 }
 
-class _AddExpenseDialogState extends State<_AddExpenseDialog> {
+class _ExpenseFormDialogState extends State<_ExpenseFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _titleController = TextEditingController();
-  final _amountController = TextEditingController();
+  late final TextEditingController _titleController;
+  late final TextEditingController _amountController;
 
   List<Category> _categories = [];
   Category? _selectedCategory;
-  DateTime _selectedDate = DateTime.now();
+  late DateTime _selectedDate;
   bool _loadingCategories = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCategories();
+    final expense = widget.expense;
+    _titleController = TextEditingController(text: expense?.title ?? '');
+    _amountController = TextEditingController(
+      text: expense != null ? expense.amount.toStringAsFixed(2) : '',
+    );
+    _selectedDate = expense?.date ?? DateTime.now();
+    _loadCategories(expense?.categoryId);
   }
 
   @override
@@ -43,12 +59,24 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
     super.dispose();
   }
 
-  Future<void> _loadCategories() async {
+  Future<void> _loadCategories(String? categoryId) async {
     final categories = await AppDatabase.instance.getCategories();
     if (!mounted) return;
+
+    Category? selected;
+    if (categoryId != null) {
+      for (final category in categories) {
+        if (category.id == categoryId) {
+          selected = category;
+          break;
+        }
+      }
+    }
+
     setState(() {
       _categories = categories;
-      _selectedCategory = categories.isNotEmpty ? categories.first : null;
+      _selectedCategory = selected ??
+          (categories.isNotEmpty ? categories.first : null);
       _loadingCategories = false;
     });
   }
@@ -71,17 +99,30 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
     }
 
     final now = DateTime.now();
-    final expense = Expense(
-      id: 'exp_${now.millisecondsSinceEpoch}',
-      title: _titleController.text.trim(),
-      amount: double.parse(_amountController.text.trim()),
-      date: _selectedDate,
-      categoryId: _selectedCategory!.id,
-      createdAt: now,
-      updatedAt: now,
-    );
+    final amount = double.parse(_amountController.text.trim());
 
-    await AppDatabase.instance.insertExpense(expense);
+    if (widget.isEditing) {
+      final updated = widget.expense!.copyWith(
+        title: _titleController.text.trim(),
+        amount: amount,
+        date: _selectedDate,
+        categoryId: _selectedCategory!.id,
+        updatedAt: now,
+      );
+      await AppDatabase.instance.updateExpense(updated);
+    } else {
+      final expense = Expense(
+        id: 'exp_${now.millisecondsSinceEpoch}',
+        title: _titleController.text.trim(),
+        amount: amount,
+        date: _selectedDate,
+        categoryId: _selectedCategory!.id,
+        createdAt: now,
+        updatedAt: now,
+      );
+      await AppDatabase.instance.insertExpense(expense);
+    }
+
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }
@@ -93,7 +134,7 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('New expense'),
+      title: Text(widget.isEditing ? 'Edit expense' : 'New expense'),
       content: _loadingCategories
           ? const SizedBox(
               height: 120,
@@ -176,8 +217,8 @@ class _AddExpenseDialogState extends State<_AddExpenseDialog> {
                             if (value == null || value.trim().isEmpty) {
                               return 'Enter an amount';
                             }
-                            final amount = double.tryParse(value.trim());
-                            if (amount == null || amount <= 0) {
+                            final parsed = double.tryParse(value.trim());
+                            if (parsed == null || parsed <= 0) {
                               return 'Enter a valid amount';
                             }
                             return null;

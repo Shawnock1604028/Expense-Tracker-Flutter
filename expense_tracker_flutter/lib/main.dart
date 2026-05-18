@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'data/database_bootstrap.dart';
-import 'screens/expense_tracker_list_page.dart';
+import 'screens/home_page.dart';
 
 void main() {
   configureDatabaseFactory();
@@ -19,7 +19,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const ExpenseTrackerListPage(),
+      home: const HomePage(),
     );
   }
 }
