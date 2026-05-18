@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/app_database.dart';
 import '../models/expense.dart';
+import 'add_expense_dialog.dart';
 
 class ExpenseTrackerListPage extends StatefulWidget {
   const ExpenseTrackerListPage({super.key});
@@ -16,7 +17,20 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
   @override
   void initState() {
     super.initState();
-    _expensesFuture = AppDatabase.instance.getExpensesWithCategories();
+    _reloadExpenses();
+  }
+
+  void _reloadExpenses() {
+    setState(() {
+      _expensesFuture = AppDatabase.instance.getExpensesWithCategories();
+    });
+  }
+
+  Future<void> _openAddExpenseDialog() async {
+    final added = await showAddExpenseDialog(context);
+    if (added) {
+      _reloadExpenses();
+    }
   }
 
   @override
@@ -119,7 +133,7 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: _openAddExpenseDialog,
         tooltip: 'Add expense',
         child: const Icon(Icons.add),
       ),

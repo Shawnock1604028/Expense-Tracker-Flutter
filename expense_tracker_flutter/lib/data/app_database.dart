@@ -83,6 +83,11 @@ class AppDatabase {
     return rows.map(Category.fromMap).toList();
   }
 
+  Future<void> insertExpense(Expense expense) async {
+    final db = await database;
+    await db.insert(TableNames.expenses, expense.toMap());
+  }
+
   Future<List<Expense>> getExpensesWithCategories() async {
     final db = await database;
     final rows = await db.rawQuery('''
