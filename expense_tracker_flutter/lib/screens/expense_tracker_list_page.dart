@@ -44,8 +44,8 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
             0,
             (sum, expense) => sum + expense.amount,
           );
-          final pendingSyncCount =
-              expenses.where((e) => e.needsSync).length;
+          // final pendingSyncCount =
+          //     expenses.where((e) => e.needsSync).length;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -137,11 +137,11 @@ class _ExpenseListTile extends StatelessWidget {
     final dateLabel =
         '${expense.date.month}/${expense.date.day}/${expense.date.year}';
     final categoryLabel = expense.categoryName ?? 'Unknown';
-    final title = '${expense.title}';
+    final title = expense.title;
 
     return Card(
       // Removes extra default margin around the card to keep it compact
-      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+      margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 0),
       child: ListTile(
         dense: true, // 1. Shrinks font metrics and default tile height
         visualDensity: const VisualDensity(vertical: -2), // 2. Compresses vertical padding further (-4 is max)
