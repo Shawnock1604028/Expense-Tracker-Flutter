@@ -16,14 +16,15 @@ void main() {
     await AppDatabase.instance.close();
   });
 
-  testWidgets('Home shows summary and navigates to expenses',
+  testWidgets('Home shows balance and navigates to expenses',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Shawn'), findsOneWidget);
-    expect(find.text('Total expense'), findsOneWidget);
-    expect(find.text('\$272.24'), findsOneWidget);
+    expect(find.textContaining('Shawnock'), findsOneWidget);
+    expect(find.text('Total balance'), findsOneWidget);
+    expect(find.text('Remaining'), findsOneWidget);
+    expect(find.text('\$4000.00'), findsOneWidget);
     expect(find.text('Expenses'), findsOneWidget);
 
     await tester.tap(find.text('Expenses'));

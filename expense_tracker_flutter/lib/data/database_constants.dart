@@ -9,6 +9,7 @@ abstract final class SyncColumns {
 abstract final class TableNames {
   static const categories = 'categories';
   static const expenses = 'expenses';
+  static const moneyEntries = 'money_entries';
 }
 
 abstract final class CategoryColumns {
@@ -20,4 +21,11 @@ abstract final class ExpenseColumns {
   static const amount = 'amount';
   static const date = 'date';
   static const categoryId = 'category_id';
+}
+
+abstract final class MoneyEntryColumns {
+  static const title = 'title';
+  static const amount = 'amount';
+  static const date = 'date';
+  static const note = 'note';
 }

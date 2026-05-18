@@ -1,5 +1,6 @@
 import '../models/category.dart';
 import '../models/expense.dart';
+import '../models/money_entry.dart';
 
 /// Initial local data seeded on first database open.
 abstract final class SeedData {
@@ -75,6 +76,26 @@ abstract final class SeedData {
       amount: 6.75,
       date: DateTime(2026, 5, 17),
       categoryId: 'cat_food',
+      createdAt: _seededAt,
+      updatedAt: _seededAt,
+    ),
+  ];
+
+  static final moneyEntries = [
+    MoneyEntry(
+      id: 'money_1',
+      title: 'Salary',
+      amount: 3500.00,
+      date: DateTime(2026, 5, 1),
+      note: 'Monthly paycheck',
+      createdAt: _seededAt,
+      updatedAt: _seededAt,
+    ),
+    MoneyEntry(
+      id: 'money_2',
+      title: 'Freelance',
+      amount: 500.00,
+      date: DateTime(2026, 5, 10),
       createdAt: _seededAt,
       updatedAt: _seededAt,
     ),

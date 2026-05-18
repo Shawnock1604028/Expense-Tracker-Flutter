@@ -3,21 +3,22 @@ import 'package:flutter/material.dart';
 import '../data/app_database.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
+import '../models/monthly_balance.dart';
 import '../theme/app_colors.dart';
 import 'categories_page.dart';
 import 'expense_tracker_list_page.dart';
+import 'money_entries_page.dart';
 
 class _HomeSummary {
   const _HomeSummary({
     required this.expenses,
     required this.categories,
+    required this.monthlyBalance,
   });
 
   final List<Expense> expenses;
   final List<Category> categories;
-
-  double get totalSpent =>
-      expenses.fold(0, (sum, expense) => sum + expense.amount);
+  final MonthlyBalance monthlyBalance;
 }
 
 class HomePage extends StatefulWidget {
@@ -48,10 +49,12 @@ class _HomePageState extends State<HomePage> {
     final results = await Future.wait([
       AppDatabase.instance.getExpensesWithCategories(),
       AppDatabase.instance.getCategories(),
+      AppDatabase.instance.getMonthlyBalance(),
     ]);
     return _HomeSummary(
       expenses: results[0] as List<Expense>,
       categories: results[1] as List<Category>,
+      monthlyBalance: results[2] as MonthlyBalance,
     );
   }
 
@@ -79,6 +82,18 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void _openMoneyEntries() {
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute<void>(
+            builder: (context) => const MoneyEntriesPage(),
+          ),
+        )
+        .then((_) {
+      if (mounted) _loadSummary();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -97,7 +112,8 @@ class _HomePageState extends State<HomePage> {
             }
 
             final summary = snapshot.data!;
-            final initials = _userName.isNotEmpty ? _userName[0].toUpperCase() : '?';
+            final initials =
+                _userName.isNotEmpty ? _userName[0].toUpperCase() : '?';
 
             return RefreshIndicator(
               onRefresh: () async => _loadSummary(),
@@ -107,11 +123,18 @@ class _HomePageState extends State<HomePage> {
                   _ProfileSection(
                     name: _userName,
                     initials: initials,
-                    totalSpent: summary.totalSpent,
+                    monthlyBalance: summary.monthlyBalance,
                     transactionCount: summary.expenses.length,
                     categoryCount: summary.categories.length,
                   ),
                   const SizedBox(height: 24),
+                  Text(
+                    'Quick access',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   GridView.count(
                     crossAxisCount: 2,
                     shrinkWrap: true,
@@ -120,6 +143,12 @@ class _HomePageState extends State<HomePage> {
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.15,
                     children: [
+                      _MenuCard(
+                        title: 'Money',
+                        subtitle: 'Income & deposits',
+                        icon: Icons.account_balance_wallet_outlined,
+                        onTap: _openMoneyEntries,
+                      ),
                       _MenuCard(
                         title: 'Expenses',
                         subtitle: '${summary.expenses.length} transactions',
@@ -148,20 +177,24 @@ class _ProfileSection extends StatelessWidget {
   const _ProfileSection({
     required this.name,
     required this.initials,
-    required this.totalSpent,
+    required this.monthlyBalance,
     required this.transactionCount,
     required this.categoryCount,
   });
 
   final String name;
   final String initials;
-  final double totalSpent;
+  final MonthlyBalance monthlyBalance;
   final int transactionCount;
   final int categoryCount;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final remaining = monthlyBalance.remainingBalance;
+    final remainingColor = remaining >= 0
+        ? Colors.green.shade700
+        : theme.colorScheme.error;
 
     return Card(
       color: AppColors.profileCardAsh(context),
@@ -197,20 +230,49 @@ class _ProfileSection extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                monthlyBalance.monthLabel,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
                 Text(
-                  'Total expense',
+                  'Total balance',
                   style: theme.textTheme.titleMedium,
                 ),
                 const Spacer(),
                 Text(
-                  '\$${totalSpent.toStringAsFixed(2)}',
+                  '\$${monthlyBalance.totalBalance.toStringAsFixed(2)}',
                   style: theme.textTheme.headlineMedium?.copyWith(
                     fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  'Remaining',
+                  style: theme.textTheme.titleMedium,
+                ),
+                const Spacer(),
+                Text(
+                  '\$${remaining.toStringAsFixed(2)}',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: remainingColor,
                   ),
                 ),
               ],
@@ -219,6 +281,7 @@ class _ProfileSection extends StatelessWidget {
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
+                'Spent \$${monthlyBalance.totalExpenses.toStringAsFixed(2)} · '
                 '$transactionCount transactions · $categoryCount categories',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
