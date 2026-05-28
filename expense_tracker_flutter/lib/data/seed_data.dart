@@ -4,7 +4,7 @@ import '../models/money_entry.dart';
 
 /// Initial local data seeded on first database open.
 abstract final class SeedData {
-  static final _seededAt = DateTime(2026, 5, 17, 12, 0);
+  static final _seededAt = DateTime.now();
 
   static final categories = [
     Category(
