@@ -159,16 +159,23 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final selectedDate = AppState.instance.selectedDate.value;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Expenses'),
         backgroundColor: theme.colorScheme.inversePrimary,
         actions: [
-          IconButton(
+          TextButton.icon(
             onPressed: () => _selectMonth(context),
             icon: const Icon(Icons.calendar_month),
-            tooltip: 'Filter by month',
+            label: Text(
+              '${_monthName(selectedDate.month)} ${selectedDate.year}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

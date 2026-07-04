@@ -171,15 +171,22 @@ class _MoneyEntriesPageState extends State<MoneyEntriesPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final selectedDate = AppState.instance.selectedDate.value;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Money entries'),
         actions: [
-          IconButton(
+          TextButton.icon(
             onPressed: () => _selectMonth(context),
             icon: const Icon(Icons.calendar_month),
-            tooltip: 'Filter by month',
+            label: Text(
+              '${_monthName(selectedDate.month)} ${selectedDate.year}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
