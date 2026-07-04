@@ -15,16 +15,32 @@ class AppDatabase {
   static const _dbVersion = 2;
 
   Database? _db;
+  bool _isOpening = false;
 
   Future<Database> get database async {
-    _db ??= await _open();
+    if (_db != null) return _db!;
+
+    if (_isOpening) {
+      // If already opening, wait for it to finish
+      while (_isOpening) {
+        await Future.delayed(const Duration(milliseconds: 50));
+      }
+      return _db!;
+    }
+
+    _isOpening = true;
+    try {
+      _db = await _open();
+    } finally {
+      _isOpening = false;
+    }
     return _db!;
   }
 
   Future<Database> _open() async {
     final dbPath = await getDatabasesPath();
     final path = p.join(dbPath, 'expense_tracker.db');
-    print('Database path: $path');
+    
     return openDatabase(
       path,
       version: _dbVersion,
@@ -33,12 +49,17 @@ class AppDatabase {
         await _seedIfEmpty(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) {
-          await _createMoneyEntriesTable(db);
-        }
+        // Run all creations with IF NOT EXISTS to be safe
+        await _createAllTables(db);
       },
       onOpen: (db) async {
-        await _seedIfEmpty(db);
+        // Final safety check
+        try {
+          await _createAllTables(db);
+          await _seedIfEmpty(db);
+        } catch (e) {
+          //debugPrint('Error during database onOpen: $e');
+        }
       },
     );
   }
@@ -51,7 +72,7 @@ class AppDatabase {
 
   Future<void> _createCategoriesTable(Database db) async {
     await db.execute('''
-      CREATE TABLE ${TableNames.categories} (
+      CREATE TABLE IF NOT EXISTS ${TableNames.categories} (
         ${SyncColumns.id} TEXT PRIMARY KEY,
         ${CategoryColumns.name} TEXT NOT NULL,
         ${SyncColumns.createdAt} INTEGER NOT NULL,
@@ -63,7 +84,7 @@ class AppDatabase {
 
   Future<void> _createExpensesTable(Database db) async {
     await db.execute('''
-      CREATE TABLE ${TableNames.expenses} (
+      CREATE TABLE IF NOT EXISTS ${TableNames.expenses} (
         ${SyncColumns.id} TEXT PRIMARY KEY,
         ${ExpenseColumns.title} TEXT NOT NULL,
         ${ExpenseColumns.amount} REAL NOT NULL,
