@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_database.dart';
+import '../data/app_state.dart';
 import '../models/expense.dart';
 import '../theme/action_colors.dart';
 import '../widgets/confirm_delete_dialog.dart';
@@ -20,12 +21,112 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
   void initState() {
     super.initState();
     _reloadExpenses();
+    AppState.instance.selectedDate.addListener(_reloadExpenses);
+  }
+
+  @override
+  void dispose() {
+    AppState.instance.selectedDate.removeListener(_reloadExpenses);
+    super.dispose();
   }
 
   void _reloadExpenses() {
     setState(() {
-      _expensesFuture = AppDatabase.instance.getExpensesWithCategories();
+      _expensesFuture = AppDatabase.instance.getExpensesWithCategories(
+        forMonth: AppState.instance.selectedDate.value,
+      );
     });
+  }
+
+  Future<void> _selectMonth(BuildContext context) async {
+    DateTime tempDate = AppState.instance.selectedDate.value;
+    final DateTime? picked = await showDialog<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Select Month & Year'),
+              content: SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: () => setDialogState(() => tempDate = DateTime(tempDate.year - 1, tempDate.month)),
+                        ),
+                        Text(
+                          '${tempDate.year}',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_forward),
+                          onPressed: () => setDialogState(() => tempDate = DateTime(tempDate.year + 1, tempDate.month)),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 1.5,
+                        ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final month = index + 1;
+                          final isSelected = tempDate.month == month;
+                          return InkWell(
+                            onTap: () => Navigator.pop(context, DateTime(tempDate.year, month)),
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                _monthName(month),
+                                style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : null,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (picked != null) {
+      AppState.instance.setSelectedDate(picked);
+    }
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
   }
 
   Future<void> _openAddExpenseDialog() async {
@@ -63,6 +164,13 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
       appBar: AppBar(
         title: const Text('Expenses'),
         backgroundColor: theme.colorScheme.inversePrimary,
+        actions: [
+          IconButton(
+            onPressed: () => _selectMonth(context),
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Filter by month',
+          ),
+        ],
       ),
       body: FutureBuilder<List<Expense>>(
         future: _expensesFuture,
@@ -131,9 +239,11 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
                 child: expenses.isEmpty
                     ? const Center(child: Text('No expenses yet'))
                     : ListView.separated(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 2,
-                          vertical: 2,
+                        padding: const EdgeInsets.only(
+                          left: 2,
+                          right: 2,
+                          top: 2,
+                          bottom: 80,
                         ),
                         itemCount: expenses.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 0),

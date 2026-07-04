@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_database.dart';
+import '../data/app_state.dart';
 import '../models/category.dart';
 import '../models/expense.dart';
 import '../models/monthly_balance.dart';
@@ -37,6 +38,13 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _loadSummary();
+    AppState.instance.selectedDate.addListener(_loadSummary);
+  }
+
+  @override
+  void dispose() {
+    AppState.instance.selectedDate.removeListener(_loadSummary);
+    super.dispose();
   }
 
   void _loadSummary() {
@@ -46,16 +54,100 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<_HomeSummary> _fetchSummary() async {
+    final selectedDate = AppState.instance.selectedDate.value;
     final results = await Future.wait([
-      AppDatabase.instance.getExpensesWithCategories(),
+      AppDatabase.instance.getExpensesWithCategories(forMonth: selectedDate),
       AppDatabase.instance.getCategories(),
-      AppDatabase.instance.getMonthlyBalance(),
+      AppDatabase.instance.getMonthlyBalance(forMonth: selectedDate),
     ]);
     return _HomeSummary(
       expenses: results[0] as List<Expense>,
       categories: results[1] as List<Category>,
       monthlyBalance: results[2] as MonthlyBalance,
     );
+  }
+
+  Future<void> _selectMonth(BuildContext context) async {
+    DateTime tempDate = AppState.instance.selectedDate.value;
+    final DateTime? picked = await showDialog<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Select Month & Year'),
+              content: SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: () => setDialogState(() => tempDate = DateTime(tempDate.year - 1, tempDate.month)),
+                        ),
+                        Text(
+                          '${tempDate.year}',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_forward),
+                          onPressed: () => setDialogState(() => tempDate = DateTime(tempDate.year + 1, tempDate.month)),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 1.5,
+                        ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final month = index + 1;
+                          final isSelected = tempDate.month == month;
+                          return InkWell(
+                            onTap: () => Navigator.pop(context, DateTime(tempDate.year, month)),
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                _monthName(month),
+                                style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : null,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (picked != null) {
+      AppState.instance.setSelectedDate(picked);
+    }
   }
 
   void _openExpenses() {
@@ -97,8 +189,25 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final selectedDate = AppState.instance.selectedDate.value;
 
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Dashboard'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => _selectMonth(context),
+            icon: const Icon(Icons.calendar_month),
+            label: Text(
+              '${_monthName(selectedDate.month)} ${selectedDate.year}',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: FutureBuilder<_HomeSummary>(
           future: _summaryFuture,
@@ -126,6 +235,7 @@ class _HomePageState extends State<HomePage> {
                     monthlyBalance: summary.monthlyBalance,
                     transactionCount: summary.expenses.length,
                     categoryCount: summary.categories.length,
+                    onSelectDate: () => _selectMonth(context),
                   ),
                   const SizedBox(height: 24),
                   Text(
@@ -171,6 +281,14 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  String _monthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
+  }
 }
 
 class _ProfileSection extends StatelessWidget {
@@ -180,6 +298,7 @@ class _ProfileSection extends StatelessWidget {
     required this.monthlyBalance,
     required this.transactionCount,
     required this.categoryCount,
+    required this.onSelectDate,
   });
 
   final String name;
@@ -187,6 +306,7 @@ class _ProfileSection extends StatelessWidget {
   final MonthlyBalance monthlyBalance;
   final int transactionCount;
   final int categoryCount;
+  final VoidCallback onSelectDate;
 
   @override
   Widget build(BuildContext context) {
@@ -208,39 +328,41 @@ class _ProfileSection extends StatelessWidget {
         child: Column(
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Text(
-                    initials,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
+                OutlinedButton.icon(
+                  onPressed: onSelectDate,
+                  icon: const Icon(Icons.calendar_month, size: 18),
+                  label: Text(monthlyBalance.monthLabel),
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
                   ),
                 ),
                 const Spacer(),
                 Text(
                   name,
-                  style: theme.textTheme.titleLarge?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: theme.colorScheme.primaryContainer,
+                  child: Text(
+                    initials,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                monthlyBalance.monthLabel,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,

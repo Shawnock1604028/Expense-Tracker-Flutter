@@ -259,8 +259,17 @@ class AppDatabase {
     );
   }
 
-  Future<List<Expense>> getExpensesWithCategories() async {
+  Future<List<Expense>> getExpensesWithCategories({DateTime? forMonth}) async {
     final db = await database;
+    String whereClause = '';
+    List<Object?> whereArgs = [];
+
+    if (forMonth != null) {
+      final (startMs, endMs) = _monthRange(forMonth.year, forMonth.month);
+      whereClause = 'WHERE e.${ExpenseColumns.date} >= ? AND e.${ExpenseColumns.date} < ?';
+      whereArgs = [startMs, endMs];
+    }
+
     final rows = await db.rawQuery('''
       SELECT
         e.*,
@@ -268,15 +277,27 @@ class AppDatabase {
       FROM ${TableNames.expenses} e
       INNER JOIN ${TableNames.categories} c
         ON e.${ExpenseColumns.categoryId} = c.${SyncColumns.id}
+      $whereClause
       ORDER BY e.${ExpenseColumns.date} DESC
-    ''');
+    ''', whereArgs);
     return rows.map((row) => Expense.fromMap(row)).toList();
   }
 
-  Future<List<MoneyEntry>> getMoneyEntries() async {
+  Future<List<MoneyEntry>> getMoneyEntries({DateTime? forMonth}) async {
     final db = await database;
+    String? where;
+    List<Object?>? whereArgs;
+
+    if (forMonth != null) {
+      final (startMs, endMs) = _monthRange(forMonth.year, forMonth.month);
+      where = '${MoneyEntryColumns.date} >= ? AND ${MoneyEntryColumns.date} < ?';
+      whereArgs = [startMs, endMs];
+    }
+
     final rows = await db.query(
       TableNames.moneyEntries,
+      where: where,
+      whereArgs: whereArgs,
       orderBy: '${MoneyEntryColumns.date} DESC',
     );
     return rows.map(MoneyEntry.fromMap).toList();

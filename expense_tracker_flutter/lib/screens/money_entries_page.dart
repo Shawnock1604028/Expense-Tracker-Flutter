@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/app_database.dart';
+import '../data/app_state.dart';
 import '../models/money_entry.dart';
 import '../models/monthly_balance.dart';
 import '../theme/action_colors.dart';
@@ -21,13 +22,111 @@ class _MoneyEntriesPageState extends State<MoneyEntriesPage> {
   void initState() {
     super.initState();
     _reload();
+    AppState.instance.selectedDate.addListener(_reload);
+  }
+
+  @override
+  void dispose() {
+    AppState.instance.selectedDate.removeListener(_reload);
+    super.dispose();
   }
 
   void _reload() {
-    final now = DateTime.now();
+    final selectedDate = AppState.instance.selectedDate.value;
     setState(() {
-      _dataFuture = _fetchData(now.year, now.month);
+      _dataFuture = _fetchData(selectedDate.year, selectedDate.month);
     });
+  }
+
+  Future<void> _selectMonth(BuildContext context) async {
+    DateTime tempDate = AppState.instance.selectedDate.value;
+    final DateTime? picked = await showDialog<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Select Month & Year'),
+              content: SizedBox(
+                width: 300,
+                height: 300,
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back),
+                          onPressed: () => setDialogState(() => tempDate = DateTime(tempDate.year - 1, tempDate.month)),
+                        ),
+                        Text(
+                          '${tempDate.year}',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.arrow_forward),
+                          onPressed: () => setDialogState(() => tempDate = DateTime(tempDate.year + 1, tempDate.month)),
+                        ),
+                      ],
+                    ),
+                    const Divider(),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 1.5,
+                        ),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          final month = index + 1;
+                          final isSelected = tempDate.month == month;
+                          return InkWell(
+                            onTap: () => Navigator.pop(context, DateTime(tempDate.year, month)),
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Theme.of(context).colorScheme.primaryContainer : null,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                _monthName(month),
+                                style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected ? Theme.of(context).colorScheme.onPrimaryContainer : null,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (picked != null) {
+      AppState.instance.setSelectedDate(picked);
+    }
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
   }
 
   Future<({MonthlyBalance balance, List<MoneyEntry> entries})> _fetchData(
@@ -76,6 +175,13 @@ class _MoneyEntriesPageState extends State<MoneyEntriesPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Money entries'),
+        actions: [
+          IconButton(
+            onPressed: () => _selectMonth(context),
+            icon: const Icon(Icons.calendar_month),
+            tooltip: 'Filter by month',
+          ),
+        ],
       ),
       body: FutureBuilder<({MonthlyBalance balance, List<MoneyEntry> entries})>(
         future: _dataFuture,
@@ -138,7 +244,12 @@ class _MoneyEntriesPageState extends State<MoneyEntriesPage> {
                         child: Text('No money entries for this month'),
                       )
                     : ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          top: 0,
+                          bottom: 80,
+                        ),
                         itemCount: entries.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 8),
                         itemBuilder: (context, index) {
