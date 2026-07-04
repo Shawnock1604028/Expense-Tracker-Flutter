@@ -250,7 +250,7 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
                           left: 2,
                           right: 2,
                           top: 2,
-                          bottom: 80,
+                          bottom: 100,
                         ),
                         itemCount: expenses.length,
                         separatorBuilder: (_, __) => const SizedBox(height: 0),

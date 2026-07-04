@@ -328,29 +328,10 @@ class _ProfileSection extends StatelessWidget {
         child: Column(
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                OutlinedButton.icon(
-                  onPressed: onSelectDate,
-                  icon: const Icon(Icons.calendar_month, size: 18),
-                  label: Text(monthlyBalance.monthLabel),
-                  style: OutlinedButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(width: 8),
                 CircleAvatar(
-                  radius: 20,
+                  radius: 30,
                   backgroundColor: theme.colorScheme.primaryContainer,
                   child: Text(
                     initials,
@@ -358,6 +339,13 @@ class _ProfileSection extends StatelessWidget {
                       color: theme.colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
                     ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  name,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
