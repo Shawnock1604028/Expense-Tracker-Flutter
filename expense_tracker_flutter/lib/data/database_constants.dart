@@ -10,6 +10,7 @@ abstract final class TableNames {
   static const categories = 'categories';
   static const expenses = 'expenses';
   static const moneyEntries = 'money_entries';
+  static const settings = 'settings';
 }
 
 abstract final class CategoryColumns {
@@ -28,4 +29,9 @@ abstract final class MoneyEntryColumns {
   static const amount = 'amount';
   static const date = 'date';
   static const note = 'note';
+}
+
+abstract final class SettingColumns {
+  static const key = 'key';
+  static const value = 'value';
 }

@@ -12,7 +12,7 @@ class AppDatabase {
   AppDatabase._();
   static final AppDatabase instance = AppDatabase._();
 
-  static const _dbVersion = 2;
+  static const _dbVersion = 3;
 
   Database? _db;
   bool _isOpening = false;
@@ -51,6 +51,9 @@ class AppDatabase {
       onUpgrade: (db, oldVersion, newVersion) async {
         // Run all creations with IF NOT EXISTS to be safe
         await _createAllTables(db);
+        if (oldVersion < 3) {
+          await _createSettingsTable(db);
+        }
       },
       onOpen: (db) async {
         // Final safety check
@@ -68,6 +71,16 @@ class AppDatabase {
     await _createCategoriesTable(db);
     await _createExpensesTable(db);
     await _createMoneyEntriesTable(db);
+    await _createSettingsTable(db);
+  }
+
+  Future<void> _createSettingsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ${TableNames.settings} (
+        ${SettingColumns.key} TEXT PRIMARY KEY,
+        ${SettingColumns.value} TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _createCategoriesTable(Database db) async {
@@ -336,6 +349,29 @@ class AppDatabase {
       TableNames.moneyEntries,
       where: '${SyncColumns.id} = ?',
       whereArgs: [id],
+    );
+  }
+
+  // Settings Methods
+  Future<String?> getSetting(String key) async {
+    final db = await database;
+    final maps = await db.query(
+      TableNames.settings,
+      where: '${SettingColumns.key} = ?',
+      whereArgs: [key],
+    );
+    if (maps.isNotEmpty) {
+      return maps.first[SettingColumns.value] as String;
+    }
+    return null;
+  }
+
+  Future<void> saveSetting(String key, String value) async {
+    final db = await database;
+    await db.insert(
+      TableNames.settings,
+      {SettingColumns.key: key, SettingColumns.value: value},
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 

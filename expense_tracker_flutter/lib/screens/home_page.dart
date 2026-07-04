@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import 'categories_page.dart';
 import 'expense_tracker_list_page.dart';
 import 'money_entries_page.dart';
+import 'settings_page.dart';
 
 class _HomeSummary {
   const _HomeSummary({
@@ -206,6 +207,14 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => const SettingsPage()),
+              );
+            },
+          ),
         ],
       ),
       body: SafeArea(
@@ -235,7 +244,6 @@ class _HomePageState extends State<HomePage> {
                     monthlyBalance: summary.monthlyBalance,
                     transactionCount: summary.expenses.length,
                     categoryCount: summary.categories.length,
-                    onSelectDate: () => _selectMonth(context),
                   ),
                   const SizedBox(height: 24),
                   Text(
@@ -298,7 +306,6 @@ class _ProfileSection extends StatelessWidget {
     required this.monthlyBalance,
     required this.transactionCount,
     required this.categoryCount,
-    required this.onSelectDate,
   });
 
   final String name;
@@ -306,7 +313,6 @@ class _ProfileSection extends StatelessWidget {
   final MonthlyBalance monthlyBalance;
   final int transactionCount;
   final int categoryCount;
-  final VoidCallback onSelectDate;
 
   @override
   Widget build(BuildContext context) {
@@ -323,83 +329,87 @@ class _ProfileSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(color: AppColors.profileCardAshBorder(context)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: ValueListenableBuilder<Currency>(
+        valueListenable: AppState.instance.selectedCurrency,
+        builder: (context, currency, _) {
+          return Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundColor: theme.colorScheme.primaryContainer,
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 20,
+                      backgroundColor: theme.colorScheme.primaryContainer,
+                      child: Text(
+                        initials,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onPrimaryContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      name,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      'Total balance',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${currency.symbol}${monthlyBalance.totalBalance.toStringAsFixed(2)}',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      'Remaining',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    const Spacer(),
+                    Text(
+                      '${currency.symbol}${remaining.toStringAsFixed(2)}',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: remainingColor,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerLeft,
                   child: Text(
-                    initials,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onPrimaryContainer,
-                      fontWeight: FontWeight.bold,
+                    'Spent ${currency.symbol}${monthlyBalance.totalExpenses.toStringAsFixed(2)} · '
+                    '$transactionCount transactions · $categoryCount categories',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  name,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: 16),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  'Total balance',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const Spacer(),
-                Text(
-                  '\$${monthlyBalance.totalBalance.toStringAsFixed(2)}',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  'Remaining',
-                  style: theme.textTheme.titleMedium,
-                ),
-                const Spacer(),
-                Text(
-                  '\$${remaining.toStringAsFixed(2)}',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: remainingColor,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Spent \$${monthlyBalance.totalExpenses.toStringAsFixed(2)} · '
-                '$transactionCount transactions · $categoryCount categories',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

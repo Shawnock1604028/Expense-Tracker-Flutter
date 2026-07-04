@@ -196,75 +196,81 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
             (sum, expense) => sum + expense.amount,
           );
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(0),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.baseline,
-                          textBaseline: TextBaseline.alphabetic,
+          return ValueListenableBuilder<Currency>(
+            valueListenable: AppState.instance.selectedCurrency,
+            builder: (context, currency, _) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(0),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Total spent',
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                height: 1.0,
-                              ),
-                              textHeightBehavior: const TextHeightBehavior(
-                                applyHeightToFirstAscent: false,
-                              ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  'Total spent',
+                                  style: theme.textTheme.headlineMedium?.copyWith(
+                                    height: 1.0,
+                                  ),
+                                  textHeightBehavior: const TextHeightBehavior(
+                                    applyHeightToFirstAscent: false,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  '${currency.symbol}${total.toStringAsFixed(2)}',
+                                  style: theme.textTheme.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
                             ),
-                            const Spacer(),
+                            const SizedBox(height: 2),
                             Text(
-                              '\$${total.toStringAsFixed(2)}',
-                              style: theme.textTheme.headlineMedium?.copyWith(
+                              ' Total ${expenses.length} transactions',
+                              style: theme.textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          ' Total ${expenses.length} transactions',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Expanded(
-                child: expenses.isEmpty
-                    ? const Center(child: Text('No expenses yet'))
-                    : ListView.separated(
-                        padding: const EdgeInsets.only(
-                          left: 2,
-                          right: 2,
-                          top: 2,
-                          bottom: 100,
-                        ),
-                        itemCount: expenses.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 0),
-                        itemBuilder: (context, index) {
-                          final expense = expenses[index];
-                          return _ExpenseListTile(
-                            expense: expense,
-                            onEdit: () => _editExpense(expense),
-                            onDelete: () => _deleteExpense(expense),
-                          );
-                        },
-                      ),
-              ),
-            ],
+                  Expanded(
+                    child: expenses.isEmpty
+                        ? const Center(child: Text('No expenses yet'))
+                        : ListView.separated(
+                            padding: const EdgeInsets.only(
+                              left: 2,
+                              right: 2,
+                              top: 2,
+                              bottom: 100,
+                            ),
+                            itemCount: expenses.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 0),
+                            itemBuilder: (context, index) {
+                              final expense = expenses[index];
+                              return _ExpenseListTile(
+                                expense: expense,
+                                currencySymbol: currency.symbol,
+                                onEdit: () => _editExpense(expense),
+                                onDelete: () => _deleteExpense(expense),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -282,11 +288,13 @@ class _ExpenseTrackerListPageState extends State<ExpenseTrackerListPage> {
 class _ExpenseListTile extends StatelessWidget {
   const _ExpenseListTile({
     required this.expense,
+    required this.currencySymbol,
     required this.onEdit,
     required this.onDelete,
   });
 
   final Expense expense;
+  final String currencySymbol;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -314,7 +322,7 @@ class _ExpenseListTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '\$${expense.amount.toStringAsFixed(2)}',
+              '$currencySymbol${expense.amount.toStringAsFixed(2)}',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),

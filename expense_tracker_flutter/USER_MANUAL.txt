@@ -1,0 +1,66 @@
+# EXPENSE TRACKER - USER MANUAL
+
+Welcome to the Expense Tracker app! This manual will guide you through the features and functionalities to help you manage your finances effectively.
+
+---
+
+## 1. DASHBOARD (HOME SCREEN)
+The Dashboard provides an immediate overview of your financial health for the selected month.
+
+*   **Financial Summary Card:** View your "Total Balance" (Income), "Remaining" funds, and "Total Spent" (Expenses).
+*   **Active Month Selection:** Tap the Date Button (e.g., "Jan 2024") in the summary card to change the month and year. This selection is universal and will filter data on all other screens.
+*   **Quick Access Menu:**
+    *   **Money:** Jump to your income and deposits list.
+    *   **Expenses:** View your detailed spending history.
+    *   **Categories:** Manage your expense categories.
+*   **Settings:** Tap the gear icon in the top-left to configure app-wide settings like Currency.
+
+---
+
+## 2. MANAGING EXPENSES
+Track where your money goes by recording every transaction.
+
+*   **View Expenses:** Tap the "Expenses" card on the Dashboard.
+*   **Add Expense:** Tap the "+" button. Provide a title, amount, date, and category.
+*   **Edit/Delete:** Each expense entry has Edit (pencil) and Delete (trash) icons.
+*   **Monthly Filtering:** Use the calendar icon in the top-right to quickly switch months while staying on the expense list.
+
+---
+
+## 3. MANAGING MONEY ENTRIES (INCOME)
+Record your salary, freelance earnings, or any other deposits.
+
+*   **View Income:** Tap the "Money" card on the Dashboard.
+*   **Add Income:** Tap the "+" button. Provide a title, amount, date, and optional note.
+*   **Edit/Delete:** Use the icons on each card to modify or remove entries.
+*   **Summary:** View the total income recorded for the currently selected month at the top of the page.
+
+---
+
+## 4. CATEGORIES
+Organize your expenses into meaningful groups (e.g., Food, Rent, Entertainment).
+
+*   **Manage Categories:** Tap "Categories" on the Dashboard.
+*   **Add Category:** Tap the "+" button to create a new category name.
+*   **Delete Category:** You can only delete categories that are not currently being used by any expense.
+
+---
+
+## 5. SETTINGS & CURRENCY
+Tailor the app to your local region.
+
+*   **Change Currency:** Tap the Settings gear icon on the Dashboard > Select "Currency".
+*   **Supported Symbols:** You can choose from USD ($), BDT (৳), INR (₹), EUR (€), and GBP (£).
+*   **Persistence:** Your currency choice is saved automatically and will be remembered the next time you open the app.
+
+---
+
+## 6. DATA & PRIVACY
+*   **Local Storage:** Your data is stored locally on your device in a secure SQLite database.
+*   **Data Safety:** Updating the app will not wipe your data. However, uninstalling the app will delete all locally stored records.
+
+---
+
+## 7. TROUBLESHOOTING
+*   **Missing Data:** Ensure you have the correct month selected.
+*   **Scroll Issues:** If you can't reach the last item in a list, scroll to the very bottom; we have added extra space so the "+" button doesn't block your view.

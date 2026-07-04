@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'data/app_state.dart';
 import 'data/database_bootstrap.dart';
 import 'screens/home_page.dart';
 
@@ -14,6 +15,10 @@ void main() async {
 
   try {
     configureDatabaseFactory();
+    
+    // Load persisted settings (like currency)
+    await AppState.instance.loadSettings();
+
     runApp(const MyApp());
   } catch (e) {
     debugPrint('STARTUP ERROR: $e');

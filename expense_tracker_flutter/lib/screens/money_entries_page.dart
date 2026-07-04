@@ -205,71 +205,77 @@ class _MoneyEntriesPageState extends State<MoneyEntriesPage> {
           final balance = data.balance;
           final entries = data.entries;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          balance.monthLabel,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
+          return ValueListenableBuilder<Currency>(
+            valueListenable: AppState.instance.selectedCurrency,
+            builder: (context, currency, _) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Month total'),
-                            const Spacer(),
                             Text(
-                              '\$${balance.totalBalance.toStringAsFixed(2)}',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: ActionColors.add,
+                              balance.monthLabel,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
                               ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                const Text('Month total'),
+                                const Spacer(),
+                                Text(
+                                  '${currency.symbol}${balance.totalBalance.toStringAsFixed(2)}',
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: ActionColors.add,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '${entries.length} entries this month',
+                              style: theme.textTheme.bodySmall,
                             ),
                           ],
                         ),
-                        Text(
-                          '${entries.length} entries this month',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
-              Expanded(
-                child: entries.isEmpty
-                    ? const Center(
-                        child: Text('No money entries for this month'),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.only(
-                          left: 16,
-                          right: 16,
-                          top: 0,
-                          bottom: 80,
-                        ),
-                        itemCount: entries.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final entry = entries[index];
-                          return _MoneyEntryTile(
-                            entry: entry,
-                            onEdit: () => _editEntry(entry),
-                            onDelete: () => _deleteEntry(entry),
-                          );
-                        },
-                      ),
-              ),
-            ],
+                  Expanded(
+                    child: entries.isEmpty
+                        ? const Center(
+                            child: Text('No money entries for this month'),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.only(
+                              left: 16,
+                              right: 16,
+                              top: 0,
+                              bottom: 80,
+                            ),
+                            itemCount: entries.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
+                            itemBuilder: (context, index) {
+                              final entry = entries[index];
+                              return _MoneyEntryTile(
+                                entry: entry,
+                                currencySymbol: currency.symbol,
+                                onEdit: () => _editEntry(entry),
+                                onDelete: () => _deleteEntry(entry),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -287,11 +293,13 @@ class _MoneyEntriesPageState extends State<MoneyEntriesPage> {
 class _MoneyEntryTile extends StatelessWidget {
   const _MoneyEntryTile({
     required this.entry,
+    required this.currencySymbol,
     required this.onEdit,
     required this.onDelete,
   });
 
   final MoneyEntry entry;
+  final String currencySymbol;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -312,7 +320,7 @@ class _MoneyEntryTile extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '\$${entry.amount.toStringAsFixed(2)}',
+              '$currencySymbol${entry.amount.toStringAsFixed(2)}',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
                 color: ActionColors.add,
