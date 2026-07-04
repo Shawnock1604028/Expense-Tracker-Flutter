@@ -24,7 +24,7 @@ class AppDatabase {
   Future<Database> _open() async {
     final dbPath = await getDatabasesPath();
     final path = p.join(dbPath, 'expense_tracker.db');
-
+    print('Database path: $path');
     return openDatabase(
       path,
       version: _dbVersion,

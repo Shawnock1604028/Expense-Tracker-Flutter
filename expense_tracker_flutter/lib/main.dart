@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'data/database_bootstrap.dart';
 import 'screens/home_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   configureDatabaseFactory();
   runApp(const MyApp());
 }
